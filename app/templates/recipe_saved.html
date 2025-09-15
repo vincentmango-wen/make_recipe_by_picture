@@ -1,0 +1,9 @@
+{% extends "base.html" %} {% block title %}保存完了{% endblock %} {% block
+content %}
+<div class="alert alert-success" role="alert">
+  ✅ レシピ「{{ recipe.title }}」を保存しました！
+</div>
+
+<a href="/recipes_ui" class="btn btn-primary">📖 保存済みレシピを見る</a>
+<a href="/" class="btn btn-secondary">← 戻る</a>
+{% endblock %}

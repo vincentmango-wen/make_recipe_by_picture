@@ -1,0 +1,55 @@
+{% extends "base.html" %} {% block title %}検出結果{% endblock %} {% block
+content %}
+<h2 class="mb-3">アップロード結果</h2>
+<img
+  src="{{ image_url }}"
+  alt="uploaded image"
+  class="img-thumbnail mb-3"
+  width="300"
+/>
+
+<h3>検出された食材</h3>
+<ul class="list-group mb-3">
+  {% for ing in ingredients %}
+  <li class="list-group-item">{{ ing }}</li>
+  {% endfor %}
+</ul>
+
+<!-- 新しいボタン: 検出された食材でレシピ生成 -->
+<form action="/generate_ui" method="post">
+  <input type="hidden" name="ingredients" value="{{ ','.join(ingredients) }}" />
+  <button type="submit" class="btn btn-success">この食材でレシピ生成</button>
+</form>
+
+<a href="/" class="btn btn-secondary mt-3">← 戻る</a>
+<script>
+  function updateHiddenInput() {
+    const items = document.querySelectorAll("#ingredient-list li span");
+    const values = Array.from(items).map((el) => el.textContent.trim());
+    document.getElementById("ingredients-input").value = values.join(",");
+  }
+
+  function removeIngredient(button) {
+    button.closest("li").remove();
+    updateHiddenInput();
+  }
+
+  function addIngredient() {
+    const input = document.getElementById("new-ingredient");
+    const value = input.value.trim();
+    if (!value) return;
+
+    const ul = document.getElementById("ingredient-list");
+    const li = document.createElement("li");
+    li.className =
+      "list-group-item d-flex justify-content-between align-items-center";
+    li.innerHTML = `<span>${value}</span>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeIngredient(this)">削除</button>`;
+    ul.appendChild(li);
+
+    input.value = "";
+    updateHiddenInput();
+  }
+</script>
+
+{% endblock %}

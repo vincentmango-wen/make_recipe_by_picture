@@ -1,0 +1,16 @@
+{% extends "base.html" %} {% block title %}レシピ詳細{% endblock %} {% block
+content %}
+<h2>{{ recipe.title }}</h2>
+
+{% if recipe.image_url %}
+<img src="{{ recipe.image_url }}" alt="料理画像" class="img-fluid mb-3" />
+{% endif %}
+
+<h4>手順</h4>
+<p>{{ recipe.steps }}</p>
+
+<h4>作成日</h4>
+<p>{{ recipe.created_at }}</p>
+
+<a href="/recipes_ui" class="btn btn-secondary">← 一覧へ戻る</a>
+{% endblock %}

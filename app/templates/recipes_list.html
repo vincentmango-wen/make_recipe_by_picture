@@ -1,0 +1,56 @@
+{% extends "base.html" %} {% block title %}保存済みレシピ一覧{% endblock %} {%
+block content %}
+<h2 class="mb-4">保存済みレシピ</h2>
+
+<div class="mb-3">
+  {% if fav_only %}
+  <a href="/recipes_ui" class="btn btn-outline-primary">すべて表示</a>
+  {% else %}
+  <a href="/recipes_ui?fav_only=true" class="btn btn-warning"
+    >⭐ お気に入りのみ</a
+  >
+  {% endif %}
+</div>
+
+<div class="row">
+  {% if recipes %} {% for recipe in recipes %}
+  <div class="col-md-4 mb-3">
+    <div class="card h-100 shadow-sm">
+      {% if recipe.image_url %}
+      <img src="{{ recipe.image_url }}" class="card-img-top" alt="レシピ画像" />
+      {% endif %}
+      <div class="card-body">
+        <h5 class="card-title">
+          {{ recipe.title }} {% if recipe.favorite %}⭐{% endif %}
+        </h5>
+        <!-- タグ表示 -->
+        {% if recipe.tags %}
+        <p>
+          {% for tag in recipe.tags %}
+          <span class="badge bg-info text-dark">{{ tag.name }}</span>
+          {% endfor %}
+        </p>
+        {% endif %}
+        <p class="card-text">{{ recipe.steps[:50] }}...</p>
+        <a href="/recipes_ui/{{ recipe.id }}" class="btn btn-primary btn-sm"
+          >詳細</a
+        >
+        <form
+          action="/recipes_ui/{{ recipe.id }}/toggle_fav"
+          method="post"
+          style="display: inline"
+        >
+          <button type="submit" class="btn btn-warning btn-sm">
+            {% if recipe.favorite %}★ 外す{% else %}☆ お気に入り{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %} {% else %}
+  <p>レシピが見つかりません。</p>
+  {% endif %}
+</div>
+
+<a href="/" class="btn btn-secondary mt-3">← 戻る</a>
+{% endblock %}

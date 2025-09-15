@@ -1,0 +1,42 @@
+{% extends "base.html" %} {% block title %}トップページ{% endblock %} {% block
+content %}
+<h1 class="mb-4">食材からレシピをつくろう</h1>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title">1. 食材画像をアップロード</h5>
+    <form action="/upload_ui" method="post" enctype="multipart/form-data">
+      <div class="mb-3">
+        <input
+          type="file"
+          class="form-control"
+          name="file"
+          accept="image/*"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">
+        アップロードして検出
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">2. 食材リストからレシピ生成</h5>
+    <form action="/generate_ui" method="post">
+      <div class="mb-3">
+        <input
+          type="text"
+          class="form-control"
+          name="ingredients"
+          placeholder="トマト,鶏肉,玉ねぎ"
+          required
+        />
+      </div>
+      <button type="submit" class="btn btn-success">レシピを生成</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

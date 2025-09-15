@@ -1,0 +1,9 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.9
+sqlmodel>=0.0.16
+SQLAlchemy>=2.0.0
+pydantic>=2.0.0
+python-dotenv>=1.0.1
+openai>=1.40.0
+Pillow>=10.0.0
