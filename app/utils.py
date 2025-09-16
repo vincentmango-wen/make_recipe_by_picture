@@ -19,7 +19,7 @@ def timestamped_filename(original: str) -> str:
     return f"{ts}_{original}"
 
 
-def save_upload_file(upload_file, upload_dir: str = "static/uploads") -> Path:
+def save_upload_file(upload_file, upload_dir: str = "picture/uploads") -> Path:
     """Save an uploaded file (Pillow used to normalize image) and return Path."""
     _ensure_dir(upload_dir)
     filename = timestamped_filename(upload_file.filename)
@@ -54,7 +54,7 @@ def parse_ingredients_from_response(content: str) -> list[str]:
     return items
 
 
-def save_b64_image(b64_json: str, output_dir: str = "static/generated", title: str | None = None) -> Path:
+def save_b64_image(b64_json: str, output_dir: str = "picture/generated", title: str | None = None) -> Path:
     _ensure_dir(output_dir)
     img_bytes = base64.b64decode(b64_json)
     safe_title = (title or "image").replace(" ", "_")

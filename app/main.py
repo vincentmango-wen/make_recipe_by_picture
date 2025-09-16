@@ -39,8 +39,11 @@ app.include_router(auth.router)
 
 # /static というURLパスで、プロジェクト内の static/ フォルダを公開する
 # 生成した料理画像などをブラウザから見られるようにしておく
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="picture"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+# CSSやJSなどの静的ファイルを /static にマウント（app/static フォルダを公開）
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # DB初期化を一度だけ実行
 init_db()
@@ -117,7 +120,7 @@ async def upload_ui(request: Request, file: UploadFile = File(...)):
         "result.html",
         {
             "request": request,
-            "image_url": f"/static/uploads/{save_path.name}",
+            "image_url": f"/picture/uploads/{save_path.name}",
             "ingredients": ingredients,
         },
     )
@@ -171,7 +174,7 @@ async def generate_ui(
 
     img_b64 = image_response.data[0].b64_json
     save_path = save_b64_image(img_b64, title=title)
-    image_url = f"/static/generated/{save_path.name}"
+    image_url = f"/picture/generated/{save_path.name}"
 
     tags = session.exec(select(Tag)).all()
 
