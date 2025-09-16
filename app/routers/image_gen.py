@@ -42,7 +42,7 @@ def generate_image(req: ImageRequest):
             "status": "success",
             "title": req.title,
             "ingredients": req.ingredients,
-            "image_url": f"/app/static/generated/{save_path.name}"
+            "image_url": f"/static/generated/{save_path.name}"
         })
 
     except Exception as e:

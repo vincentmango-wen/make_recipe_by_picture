@@ -17,7 +17,13 @@ block content %}
   <div class="col-md-4 mb-3">
     <div class="card h-100 shadow-sm">
       {% if recipe.image_url %}
-      <img src="{{ recipe.image_url }}" class="card-img-top" alt="レシピ画像" />
+      <img
+        src="{{ recipe.image_url }}"
+        alt="レシピ画像"
+        class="recipe-list-img"
+        loading="lazy"
+        decoding="async"
+      />
       {% endif %}
       <div class="card-body">
         <h5 class="card-title">
@@ -43,6 +49,14 @@ block content %}
           <button type="submit" class="btn btn-warning btn-sm">
             {% if recipe.favorite %}★ 外す{% else %}☆ お気に入り{% endif %}
           </button>
+        </form>
+        <!-- 削除ボタン -->
+        <form
+          action="/recipes_ui/{{ recipe.id }}/delete"
+          method="post"
+          onsubmit="return confirm('本当に削除しますか？');"
+        >
+          <button type="submit" class="btn btn-danger btn-sm">削除</button>
         </form>
       </div>
     </div>

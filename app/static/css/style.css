@@ -19,3 +19,32 @@ body::before {
   opacity: 0.7; /* 透明度70% */
   z-index: -1; /* 背景として奥に配置 */
 }
+
+/* レシピ一覧カードの画像を見栄え優先に */
+.recipe-list-img {
+  width: 100%;
+  height: 230px; /* 好みで 200〜280px 程度に */
+  object-fit: cover; /* 枠優先でトリミングして表示 */
+  display: block;
+  border-top-left-radius: 0.5rem; /* カードの角丸に合わせる */
+  border-top-right-radius: 0.5rem;
+  background-color: #fff; /* 読み込み中の下地 */
+}
+
+/* 画面幅で高さを少し伸縮（任意） */
+@media (min-width: 992px) {
+  .recipe-list-img {
+    height: 260px;
+  }
+}
+@media (min-width: 1400px) {
+  .recipe-list-img {
+    height: 300px;
+  }
+}
+
+.recipe-detail-img {
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}

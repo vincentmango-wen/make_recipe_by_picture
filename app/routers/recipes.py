@@ -1,5 +1,6 @@
 # app/routers/recipes.py
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 from typing import List
 
@@ -82,17 +83,3 @@ def update_recipe(recipe_id: int, recipe_data: RecipeCreate, session: Session = 
     session.commit()
     session.refresh(recipe)
     return recipe
-
-
-@router.delete("/{recipe_id}")
-def delete_recipe(recipe_id: int, session: Session = Depends(get_session)):
-    """
-    レシピを削除するAPI
-    """
-    recipe = session.get(Recipe, recipe_id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-
-    session.delete(recipe)
-    session.commit()
-    return {"status": "success", "message": "Recipe deleted"}

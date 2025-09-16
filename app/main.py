@@ -39,8 +39,6 @@ app.include_router(auth.router)
 
 # /static というURLパスで、プロジェクト内の static/ フォルダを公開する
 # 生成した料理画像などをブラウザから見られるようにしておく
-# 画像（生成画像やアップロード）を /picture にマウント
-app.mount("/picture", StaticFiles(directory="picture"), name="picture")
 
 # CSSやJSなどの静的ファイルを /static にマウント（app/static フォルダを公開）
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -122,7 +120,7 @@ async def upload_ui(request: Request, file: UploadFile = File(...)):
         "result.html",
         {
             "request": request,
-            "image_url": f"/picture/uploads/{save_path.name}",
+            "image_url": f"/static/uploads/{save_path.name}",
             "ingredients": ingredients,
         },
     )
@@ -176,7 +174,7 @@ async def generate_ui(
 
     img_b64 = image_response.data[0].b64_json
     save_path = save_b64_image(img_b64, title=title)
-    image_url = f"/picture/generated/{save_path.name}"
+    image_url = f"/static/generated/{save_path.name}"
 
     tags = session.exec(select(Tag)).all()
 
@@ -321,3 +319,21 @@ def delete_tag(tag_id: int, session: Session = Depends(get_session)):
         session.delete(tag)
         session.commit()
     return RedirectResponse(url="/tags_ui", status_code=303)
+
+@app.post("/recipes_ui/{recipe_id}/delete")
+def delete_recipe_ui(recipe_id: int, session: Session = Depends(get_session)):
+    recipe = session.get(Recipe, recipe_id)
+    if not recipe:
+        return RedirectResponse(url="/recipes_ui", status_code=303)
+
+    # （任意）画像ファイルも消す
+    if recipe.image_url and recipe.image_url.startswith("/static/"):
+        p = Path("app") / recipe.image_url.lstrip("/")
+        try:
+            p.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    session.delete(recipe)
+    session.commit()
+    return RedirectResponse(url="/recipes_ui", status_code=303)
