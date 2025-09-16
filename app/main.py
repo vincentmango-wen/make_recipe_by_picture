@@ -1,16 +1,14 @@
 # app/main.py
 from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from passlib.context import CryptContext
-from datetime import datetime, timedelta
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
 from sqlmodel import Session, select
-from pathlib import Path
-from typing import List, Optional
-from openai import OpenAI
-import os, base64
+from typing import List
+import os
+import base64
 from dotenv import load_dotenv
+from app.utils import save_upload_file, get_openai_client, parse_ingredients_from_response, save_b64_image
 
 from app.database import init_db, get_session
 from app.routers import recipes, upload, generate, image_gen
@@ -18,22 +16,11 @@ from app.models import Tag, Recipe, User
 from app.schemas import RecipeCreate
 from app.routers import auth
 from app.routers.auth import get_current_user
-from app.core.security import pwd_context
-
+from app.core.security import pwd_context, create_access_token
 from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-
-SECRET_KEY = "your-secret-key"
-ALGORITHM = "HS256"
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=30))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # FastAPIアプリ本体を生成
 # ※タイトルや説明は自動生成のドキュメント(/docs)に反映されます
@@ -94,19 +81,12 @@ async def upload_ui(request: Request, file: UploadFile = File(...)):
     from PIL import Image
     from datetime import datetime
 
-    UPLOAD_DIR = Path("static/uploads")
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    save_path = UPLOAD_DIR / f"{timestamp}_{file.filename}"
-
-    # 画像保存
-    img = Image.open(file.file)
-    img.save(save_path)
+    # save uploaded file using utility
+    save_path = save_upload_file(file)
 
     # --- Vision API呼び出し ---
     load_dotenv()
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
 
     prompt = """
     この画像に写っている食材をリストアップしてください。
@@ -131,14 +111,7 @@ async def upload_ui(request: Request, file: UploadFile = File(...)):
 
     # 返答から食材リストを抽出
     content = response.choices[0].message.content.strip()
-
-    # もしJSON形式ならevalやjson.loadsで変換
-    import json
-    try:
-        ingredients = json.loads(content)
-    except Exception:
-        # JSONでなければ、改行区切りやカンマ区切りを分割
-        ingredients = [x.strip("・- \n") for x in content.replace("、", ",").split(",") if x.strip()]
+    ingredients = parse_ingredients_from_response(content)
 
     return templates.TemplateResponse(
         "result.html",
@@ -159,7 +132,7 @@ async def generate_ui(
     session: Session = Depends(get_session)
     ):
     load_dotenv()
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
 
     ingredient_list = [i.strip() for i in ingredients.split(",") if i.strip()]
 
@@ -189,13 +162,6 @@ async def generate_ui(
     title = title_match.group(1).strip() if title_match else "料理"
 
     # ---------- 料理画像生成 ----------
-    from datetime import datetime
-    import base64
-    from pathlib import Path
-
-    OUTPUT_DIR = Path("static/generated")
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
     image_response = client.images.generate(
         model="dall-e-3",
         prompt=f"{title} の料理の完成品イメージ写真、日本家庭料理風",
@@ -204,14 +170,8 @@ async def generate_ui(
     )
 
     img_b64 = image_response.data[0].b64_json
-    img_bytes = base64.b64decode(img_b64)
-
-    filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{title}.png"
-    save_path = OUTPUT_DIR / filename
-    with open(save_path, "wb") as f:
-        f.write(img_bytes)
-
-    image_url = f"/static/generated/{filename}"
+    save_path = save_b64_image(img_b64, title=title)
+    image_url = f"/static/generated/{save_path.name}"
 
     tags = session.exec(select(Tag)).all()
 
@@ -226,10 +186,7 @@ async def generate_ui(
         },
     )
 
-from fastapi import Depends
-from sqlmodel import Session, select
 from app.database import get_session
-from app.models import Recipe
 
 # ----------------------------
 # 保存済みレシピ一覧

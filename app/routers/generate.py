@@ -4,21 +4,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List
-from openai import OpenAI
-from dotenv import load_dotenv
-
-# .envファイルを読み込む
-load_dotenv()
-opejnai_api_key = os.getenv("OPENAI_API_KEY")
-print(os.getenv("OPENAI_API_KEY"))  # 確認用
+from app.utils import get_openai_client
 
 router = APIRouter(prefix="/generate", tags=["generate"])
-
-# OpenAIクライアント
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise RuntimeError("OPENAI_API_KEY is not set in environment variables")
-client = OpenAI(api_key=api_key)
 
 
 class GenerateRequest(BaseModel):
@@ -32,6 +20,8 @@ def generate_recipe(req: GenerateRequest):
     """
     if not req.ingredients:
         raise HTTPException(status_code=400, detail="Ingredients list cannot be empty")
+
+    client = get_openai_client()
 
     # プロンプト作成
     prompt = f"""

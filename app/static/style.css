@@ -1,17 +1,32 @@
-body {
-  font-family: sans-serif;
-  margin: 2rem;
-  background: #fdfdfd;
+/* app static stylesheet */
+body.bg-light {
+  background-color: #f8f9fa;
+}
+.navbar-brand {
+  font-weight: 700;
+}
+.container {
+  max-width: 960px;
+}
+.card-title {
+  font-size: 1.05rem;
+}
+.img-thumbnail {
+  max-width: 100%;
+  height: auto;
+}
+/* utilities */
+.hidden {
+  display: none;
 }
 
-h1 {
-  color: #333;
+/* small tweaks for forms */
+.form-label {
+  font-weight: 600;
 }
-
-form {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid #ccc;
-  background: #fafafa;
-  border-radius: 8px;
+.btn-primary {
+  background-color: #0d6efd;
+}
+.btn-success {
+  background-color: #198754;
 }

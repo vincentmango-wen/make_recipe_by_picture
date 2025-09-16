@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 from pathlib import Path
 from PIL import Image
+from app.utils import save_upload_file
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -28,10 +29,8 @@ async def upload_image(file: UploadFile = File(...)):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     save_path = UPLOAD_DIR / f"{timestamp}_{file.filename}"
 
-    # Pillowで開いて保存（形式を整えるため）
     try:
-        img = Image.open(file.file)
-        img.save(save_path)
+        save_path = save_upload_file(file)
     except Exception:
         raise HTTPException(status_code=500, detail="Failed to process image")
 
@@ -41,5 +40,5 @@ async def upload_image(file: UploadFile = File(...)):
     return JSONResponse({
         "filename": file.filename,
         "saved_path": str(save_path),
-        "ingredients": dummy_ingredients
+        "ingredients": dummy_ingredients,
     })
