@@ -39,11 +39,13 @@ app.include_router(auth.router)
 
 # /static というURLパスで、プロジェクト内の static/ フォルダを公開する
 # 生成した料理画像などをブラウザから見られるようにしておく
-app.mount("/static", StaticFiles(directory="picture"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+# 画像（生成画像やアップロード）を /picture にマウント
+app.mount("/picture", StaticFiles(directory="picture"), name="picture")
 
 # CSSやJSなどの静的ファイルを /static にマウント（app/static フォルダを公開）
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+templates = Jinja2Templates(directory="app/templates")
 
 # DB初期化を一度だけ実行
 init_db()

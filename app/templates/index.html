@@ -1,42 +1,189 @@
 {% extends "base.html" %} {% block title %}トップページ{% endblock %} {% block
 content %}
-<h1 class="mb-4">食材からレシピをつくろう</h1>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <h5 class="card-title">1. 食材画像をアップロード</h5>
-    <form action="/upload_ui" method="post" enctype="multipart/form-data">
-      <div class="mb-3">
-        <input
-          type="file"
-          class="form-control"
-          name="file"
-          accept="image/*"
-          required
-        />
-      </div>
-      <button type="submit" class="btn btn-primary">
-        アップロードして検出
-      </button>
-    </form>
+<!-- 小さなカスタムスタイル: 既存のCSSに依存しない見た目調整 -->
+<style>
+  .hero {
+    background: linear-gradient(135deg, #fff7e6 0%, #ffe6f0 100%);
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 6px 18px rgba(18, 18, 18, 0.06);
+    margin-bottom: 20px;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+  }
+  .step-card {
+    border-radius: 10px;
+    padding: 18px;
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+    text-align: left;
+  }
+  .step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #ff8a65, #ff7043);
+    color: #fff;
+    font-weight: 700;
+    margin-right: 12px;
+  }
+  .muted {
+    color: #6b7280;
+  }
+  .hint {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-top: 8px;
+  }
+  .form-file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* 入力が左に伸びてボタンが右端に来るように */
+    width: 100%;
+  }
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  @media (max-width: 560px) {
+    .hero {
+      padding: 18px;
+    }
+  }
+</style>
+
+<div class="hero">
+  <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap">
+    <div style="flex: 0 0 64px">
+      <img
+        src="/static/images/logo.png"
+        alt="logo"
+        style="
+          width: 64px;
+          height: 64px;
+          border-radius: 12px;
+          object-fit: cover;
+        "
+        onerror="this.style.display='none'"
+      />
+    </div>
+    <div>
+      <h1 style="margin: 0 0 6px 0">🍅食材からレシピをつくろう✨</h1>
+      <p class="muted" style="margin: 0; max-width: 56ch">
+        食材の写真をアップロードするか、食材名をカンマ区切りで入力して「レシピを生成」を押すだけ。AIがあなたに合ったレシピを提案します。※
+        参考例としてご利用ください。
+      </p>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-body">
-    <h5 class="card-title">2. 食材リストからレシピ生成</h5>
-    <form action="/generate_ui" method="post">
-      <div class="mb-3">
+<div class="steps">
+  <div class="step-card">
+    <div style="display: flex; align-items: center">
+      <div class="step-number">1</div>
+      <div>
+        <h5 style="margin: 0">写真から食材を検出</h5>
+        <div class="hint">
+          スマホで撮った写真や台所にある食材の写真をアップロードしてください。AIが写っている食材を検出します。
+        </div>
+      </div>
+    </div>
+
+    <form
+      action="/upload_ui"
+      method="post"
+      enctype="multipart/form-data"
+      style="margin-top: 12px"
+    >
+      <div class="mb-3 form-file" style="width: 100%">
+        <label class="d-flex" style="flex: 1; align-items: center; gap: 12px">
+          <input
+            type="file"
+            class="form-control"
+            name="file"
+            accept="image/*"
+            required
+            style="flex: 1"
+          />
+        </label>
+        <div style="margin-left: auto">
+          <button type="submit" class="btn btn-primary btn-icon">
+            📷 検出
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="step-card">
+    <div style="display: flex; align-items: center">
+      <div
+        class="step-number"
+        style="background: linear-gradient(180deg, #4ade80, #10b981)"
+      >
+        2
+      </div>
+      <div>
+        <h5 style="margin: 0">食材を手入力して生成</h5>
+        <div class="hint">
+          料理に入れたい食材をカンマで区切って入力してください（例: トマト,
+          鶏肉, 玉ねぎ）。簡単なレシピを生成します。
+        </div>
+      </div>
+    </div>
+
+    <form action="/generate_ui" method="post" style="margin-top: 12px">
+      <div
+        class="mb-3"
+        style="display: flex; gap: 8px; align-items: center; width: 100%"
+      >
         <input
           type="text"
           class="form-control"
           name="ingredients"
           placeholder="トマト,鶏肉,玉ねぎ"
           required
+          style="flex: 1"
         />
+        <div style="margin-left: auto">
+          <button type="submit" class="btn btn-success btn-icon">
+            ✨ レシピを生成
+          </button>
+        </div>
       </div>
-      <button type="submit" class="btn btn-success">レシピを生成</button>
     </form>
   </div>
+
+  <div class="step-card">
+    <div style="display: flex; align-items: center">
+      <div
+        class="step-number"
+        style="background: linear-gradient(180deg, #60a5fa, #3b82f6)"
+      >
+        ✓
+      </div>
+      <div>
+        <h5 style="margin: 0">生成されたレシピを確認</h5>
+        <div class="hint">
+          提案されたレシピは材料・手順・調理時間の目安を含みます。保存や編集も可能です。
+        </div>
+      </div>
+    </div>
+    <div class="muted" style="margin-top: 12px">
+      ※
+      提案は参考例です。アレルギーや調理上の注意点は必ずご自身でご確認ください。
+    </div>
+  </div>
 </div>
+
 {% endblock %}

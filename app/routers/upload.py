@@ -10,7 +10,7 @@ from app.utils import save_upload_file
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 # 保存先ディレクトリ
-UPLOAD_DIR = Path("picture/uploads")
+UPLOAD_DIR = Path("app/static/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
