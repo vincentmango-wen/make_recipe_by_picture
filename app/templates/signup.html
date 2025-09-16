@@ -1,0 +1,50 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-lg rounded-3">
+        <div class="card-header text-center bg-success text-white">
+          <h4>📝 サインアップ</h4>
+        </div>
+        <div class="card-body">
+          <form action="/signup" method="post">
+            <div class="mb-3">
+              <label class="form-label">ユーザー名</label>
+              <input
+                type="text"
+                name="username"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">メールアドレス</label>
+              <input type="email" name="email" class="form-control" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">パスワード</label>
+              <input
+                type="password"
+                name="password"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">
+                サインアップ
+              </button>
+            </div>
+          </form>
+        </div>
+        <div class="card-footer text-center">
+          <small class="text-muted"
+            >すでにアカウントをお持ちですか？
+            <a href="/login">ログイン</a></small
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

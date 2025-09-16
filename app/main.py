@@ -1,18 +1,39 @@
 # app/main.py
-from fastapi import FastAPI, Request, Form, UploadFile, File, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from passlib.context import CryptContext
+from datetime import datetime, timedelta
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
 from sqlmodel import Session, select
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from openai import OpenAI
 import os, base64
 from dotenv import load_dotenv
 
 from app.database import init_db, get_session
 from app.routers import recipes, upload, generate, image_gen
-from app.models import Tag, Recipe
+from app.models import Tag, Recipe, User
+from app.schemas import RecipeCreate
+from app.routers import auth
+from app.routers.auth import get_current_user
+from app.core.security import pwd_context
+
+from jose import JWTError, jwt
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=30))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # FastAPIアプリ本体を生成
 # ※タイトルや説明は自動生成のドキュメント(/docs)に反映されます
@@ -27,6 +48,7 @@ app.include_router(recipes.router)
 app.include_router(upload.router)
 app.include_router(generate.router)
 app.include_router(image_gen.router)
+app.include_router(auth.router)
 
 # /static というURLパスで、プロジェクト内の static/ フォルダを公開する
 # 生成した料理画像などをブラウザから見られるようにしておく
@@ -35,6 +57,26 @@ templates = Jinja2Templates(directory="app/templates")
 
 # DB初期化を一度だけ実行
 init_db()
+
+# サインアップ
+@app.post("/signup")
+def signup(username: str = Form(...), email: str = Form(...), password: str = Form(...), db: Session = Depends(get_session)):
+    hashed_pw = pwd_context.hash(password)
+    user = User(username=username, email=email, hashed_password=hashed_pw)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"msg": "User created", "user": user.username}
+
+# ログイン
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_session)):
+    user = db.exec(select(User).where(User.username == form_data.username)).first()
+    if not user or not user.verify_password(form_data.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    access_token = create_access_token({"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -236,8 +278,12 @@ def save_recipe_ui(
     ingredients: str = Form(""),
     image_url: str = Form(None),
     tags: List[str] = Form([]),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(auth.get_current_user),
 ):
+    current_user = get_current_user(request, session)
+    if not current_user:
+        return RedirectResponse(url="/login", status_code=303)
     """
     レシピをDBに保存するUI用ルート
     """
@@ -245,7 +291,8 @@ def save_recipe_ui(
         title=title,
         steps=steps,
         image_url=image_url,
-        favorite=False
+        favorite=False,
+        user_id=current_user.id
     )
 
     # 食材を登録（カンマ区切り）

@@ -14,6 +14,22 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
       <div class="container-fluid">
         <a class="navbar-brand" href="/">🍳 レシピアプリ</a>
+        <div class="collapse navbar-collapse">
+          <ul class="navbar-nav ms-auto">
+            {% if request.cookies.get('recipe_session') %}
+            <li class="nav-item">
+              <a class="nav-link" href="/logout">🚪 ログアウト</a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="/login">🔑 ログイン</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/signup">📝 サインアップ</a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
         <div>
           <a class="nav-link text-white" href="/recipes_ui"
             >📖 保存済みレシピ</a
