@@ -10,6 +10,10 @@ from PIL import Image
 
 def _ensure_dir(path: str | Path):
     p = Path(path)
+    # Avoid attempts to create absolute root-level directories like '/static'
+    if p.is_absolute() and not str(p).startswith(str(Path.cwd())):
+        # If absolute but outside the project, treat as relative to project base
+        p = Path.cwd() / p.relative_to(Path('/') )
     p.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -19,11 +23,23 @@ def timestamped_filename(original: str) -> str:
     return f"{ts}_{original}"
 
 
-def save_upload_file(upload_file, upload_dir: str = "/static/uploads") -> Path:
-    """Save an uploaded file (Pillow used to normalize image) and return Path."""
+def save_upload_file(upload_file, upload_dir: str | Path | None = None) -> Path:
+    """Save an uploaded file (Pillow used to normalize image) and return Path.
+
+    By default saves to the project's `app/static/uploads` directory so the
+    `StaticFiles` mount at `/static` can serve it. Passing an absolute path is
+    supported but will be treated as relative to the project if it points at
+    a root-level path (to avoid creating '/static' on the filesystem).
+    """
+    # default to app/static/uploads (BASE_DIR is defined later in this file)
+    global BASE_DIR
+    if upload_dir is None:
+        upload_dir = Path(__file__).resolve().parent / "static" / "uploads"
+    upload_dir = Path(upload_dir)
+
     _ensure_dir(upload_dir)
     filename = timestamped_filename(upload_file.filename)
-    save_path = Path(upload_dir) / filename
+    save_path = upload_dir / filename
 
     # Use PIL to open and re-save (handles streams and formats)
     img = Image.open(upload_file.file)
