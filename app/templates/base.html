@@ -18,25 +18,15 @@
         <a class="navbar-brand" href="/">🍳 レシピアプリ</a>
         <div class="collapse navbar-collapse">
           <ul class="navbar-nav ms-auto">
-            {% if request.cookies.get('recipe_session') %}
             <li class="nav-item">
-              <a class="nav-link text-white" href="/logout">🚪 ログアウト</a>
-            </li>
-            {% else %}
-            <li class="nav-item">
-              <a class="nav-link text-white" href="/login">🔑 ログイン</a>
+              <a class="nav-link text-white" href="/recipes_ui"
+                >� 保存済みレシピ</a
+              >
             </li>
             <li class="nav-item">
-              <a class="nav-link text-white" href="/signup">📝 サインアップ</a>
+              <a class="nav-link text-white" href="/tags_ui">🏷 タグ設定</a>
             </li>
-            {% endif %}
           </ul>
-        </div>
-        <div>
-          <a class="nav-link text-white" href="/recipes_ui"
-            >📖 保存済みレシピ</a
-          >
-          <a class="nav-link text-white" href="/tags_ui">🏷 タグ設定</a>
         </div>
       </div>
     </nav>
