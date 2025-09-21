@@ -3,7 +3,7 @@ from typing import Optional
 from jose import jwt
 from passlib.context import CryptContext
 
-SECRET_KEY = "your-secret-key"   # 環境変数化推奨
+SECRET_KEY = "your-secret-key"   # 環境変数化を推奨
 ALGORITHM = "HS256"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
