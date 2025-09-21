@@ -2,102 +2,103 @@
 
 ## 📘 プロジェクト概要
 
-このアプリは、ユーザーがアップロードした **食材の写真** から食材を自動検出し、  
-その食材を使った **おすすめレシピ** を生成・保存できるサービスです。
+このアプリは、ユーザーがアップロードした食材の写真から食材を検出し、検出した食材をもとに AI でレシピを生成・保存する Web アプリです。
 
-- **フレームワーク**: FastAPI
-- **AI モデル**: OpenAI API（GPT-4o-mini, DALL·E）
-- **DB**: SQLite
-- **対象ユーザー**: 日々の献立に悩む人、冷蔵庫の余り食材を有効活用したい人
+- フレームワーク: FastAPI
+- AI: OpenAI API（プロジェクトでは GPT 系や画像生成を想定）
+- DB: SQLite（ルートに `recipes.db` が存在します）
 
----
-
-## ✨ 主な機能
-
-- 画像アップロード → 食材検出
-- 食材リストをもとにしたレシピ提案（AI 生成）
-- レシピの詳細表示（材料・手順・完成品イメージ）
-- レシピの保存・検索・編集・削除
-- お気に入り登録（スター付与）
+主な対象は日々の献立に悩む方や、冷蔵庫の余り食材を活用したい方です。
 
 ---
 
-## 🚀 セットアップ手順
+## 主な機能
 
-### 1. リポジトリをクローン
+- 画像アップロードと食材検出
+- 検出食材をもとにしたレシピ提案（AI 生成）
+- レシピの表示・保存・編集・削除
+- 生成画像（完成イメージ）の保存と一覧表示
 
-```bash
-git clone https://github.com/your-repo/recipe-app.git
-cd recipe-app
+---
+
+## ディレクトリ構成（抜粋）
+
+プロジェクトの重要箇所を抜粋しています。
+
+```
+./
+├─ app/
+│  ├─ main.py           # FastAPI アプリのエントリーポイント
+│  ├─ database.py       # SQLite 接続・初期化
+│  ├─ models.py         # DB モデル定義
+│  ├─ schemas.py        # Pydantic スキーマ
+│  ├─ utils.py          # 共通ユーティリティ
+│  ├─ routers/          # API ルーター（generate, image_gen, recipes, upload など）
+│  └─ templates/        # Jinja2 テンプレート（HTML）
+├─ static/
+│  ├─ generated/        # AI が生成した完成イメージなど
+│  └─ uploads/          # ユーザーがアップロードした元画像
+├─ picture/uploads/     # （同様に画像アップロード用ディレクトリ）
+├─ recipes.db           # SQLite データベースファイル
+├─ requirements.txt
+└─ README.md
 ```
 
-### 2. 仮想環境を作成
+テンプレートは `app/templates/` にあり、生成済み画像は `app/static/generated/` に保存されます。
+
+---
+
+## セットアップと起動
+
+1. 仮想環境を作成してアクティベート
 
 ```bash
 python -m venv venv
-source venv/bin/activate   # macOS/Linux
-venv\Scripts\activate      # Windows
+source venv/bin/activate   # macOS / Linux (zsh を含む)
 ```
 
-### 3. パッケージをインストール
+2. 依存関係のインストール
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. 環境変数を設定
+3. 環境変数を設定
 
-.env ファイルを作成し、以下を記載してください：
+OpenAI 等の API キーを環境変数で指定します。例（`.env` を用いるかシェルで export）：
 
-```env
+```
 OPENAI_API_KEY=sk-xxxxxxx
 ```
 
-### 5. アプリを起動
+4. サーバ起動
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-アクセス URL: http://127.0.0.1:8000
+ブラウザでアクセス: http://127.0.0.1:8000
 
-Swagger UI（API ドキュメント）: http://127.0.0.1:8000/docs
+Swagger UI: http://127.0.0.1:8000/docs
 
-📂 ディレクトリ構成
+---
 
-```bash
-recipe-app/
-├─ app/
-│  ├─ main.py              # エントリーポイント
-│  ├─ routers/             # APIルーター
-│  ├─ services/            # ビジネスロジック
-│  ├─ models/              # DBモデル
-│  ├─ database.py          # DB接続設定
-│  ├─ schemas.py           # Pydanticスキーマ
-│  └─ utils.py             # 共通関数
-├─ static/                 # 生成画像保存先
-├─ tests/                  # テストコード
-├─ requirements.txt        # 依存ライブラリ
-├─ .env                    # 環境変数ファイル
-└─ README.md
-```
+## 注意／補足
 
-🧪 テスト
+- データベースはプロジェクトルートの `recipes.db` を使用しています。初回起動時にマイグレーションや初期化処理が必要な場合は `app/database.py` を参照してください。
+- 認証関連のバックアップコード (`app/removed_auth_backup/`) が含まれていますが、現在のメインルートでは未使用の可能性があります。
+- テンプレートは Jinja2 を用いており、`app/templates/` に HTML テンプレートが格納されています。
 
-```bash
-pytest tests/
-```
+---
 
-🛠 今後の拡張予定
+## 今後の拡張候補
 
-- ユーザー認証機能（ログイン/ログアウト）
+- 本格的なユーザー認証（ログイン/ログアウト）
+- ユーザーごとのレシピ管理・共有
+- 栄養計算やカロリー表示の追加
 
-- 複数ユーザーでのレシピ共有
+---
 
-- 栄養計算やカロリー表示
-
-- 外部 API との連携（例: クックパッド風データ検索）
-
-📄 ライセンス
+## ライセンス
 
 MIT License
