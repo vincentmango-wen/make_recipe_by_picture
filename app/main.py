@@ -13,7 +13,7 @@ from app.utils import save_upload_file, get_openai_client, parse_ingredients_fro
 
 from app.database import init_db, get_session
 from app.routers import recipes, upload, generate, image_gen
-from app.models import Tag, Recipe, User
+from app.models import Tag, Recipe
 from app.schemas import RecipeCreate
 
 # FastAPIアプリ本体を生成
