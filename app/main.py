@@ -147,8 +147,7 @@ async def generate_ui(
     )
 
     img_b64 = image_response.data[0].b64_json
-    save_path = save_b64_image(img_b64, title=title)
-    image_url = f"/static/generated/{save_path.name}"
+    image_url = save_b64_image(img_b64, title=title)
 
     tags = session.exec(select(Tag)).all()
 

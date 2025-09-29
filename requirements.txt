@@ -44,3 +44,7 @@ uvicorn==0.35.0
 uvloop==0.21.0
 watchfiles==1.1.0
 websockets==15.0.1
+
+# Optional: S3 and Postgres support for production
+boto3==1.28.59
+psycopg2-binary==3.2.9

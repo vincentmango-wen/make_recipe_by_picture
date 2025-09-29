@@ -36,13 +36,13 @@ def generate_image(req: ImageRequest):
         )
 
         img_b64 = response.data[0].b64_json
-        save_path = save_b64_image(img_b64, title=req.title)
+        image_url = save_b64_image(img_b64, title=req.title)
 
         return JSONResponse({
             "status": "success",
             "title": req.title,
             "ingredients": req.ingredients,
-            "image_url": f"/static/generated/{save_path.name}"
+            "image_url": str(image_url)
         })
 
     except Exception as e:
