@@ -2,6 +2,7 @@
 from typing import Generator
 import os
 import ssl
+import certifi
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
@@ -28,8 +29,8 @@ if DATABASE_URL:
         if "sslmode" in qs:
             val = qs.get("sslmode", [""])[0].lower()
             if val in ("require", "verify-ca", "verify-full", "true", "1"):
-                # pg8000 は ssl=True を受け付けないため SSLContext を渡す
-                ctx = ssl.create_default_context()
+                # certifi の CA バンドルを使って検証する SSLContext を作成
+                ctx = ssl.create_default_context(cafile=certifi.where())
                 connect_args["ssl_context"] = ctx
         # URL のクエリを除去して再構築（ドライバに不適合なクエリを渡さないため）
         SQLALCHEMY_DATABASE_URL = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
