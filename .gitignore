@@ -208,3 +208,5 @@ __marimo__/
 
 # removed_auth_backup
 removed_auth_backup/
+
+awscli-bundle/

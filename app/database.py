@@ -1,15 +1,30 @@
 # app/database.py
 from sqlmodel import SQLModel, create_engine, Session
 import os
+from dotenv import load_dotenv
 
-# 環境変数 DATABASE_URL を優先して使用。なければローカルの SQLite を使う
-DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./recipes.db"
+load_dotenv()
 
-# connect_args は SQLite のみ指定
+# Read raw DATABASE_URL from environment (may be None)
+raw_database_url = os.getenv("DATABASE_URL")
+
+# If provided, normalize common Postgres scheme variants. Some providers
+# (Heroku, older libs) return "postgres://..." which SQLAlchemy treats as
+# legacy; prefer explicit driver scheme for psycopg2.
+if raw_database_url:
+    DATABASE_URL = raw_database_url
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+else:
+    # Fallback to local SQLite for development when DATABASE_URL is not set
+    DATABASE_URL = "sqlite:///./recipes.db"
+
+# connect_args are required only for SQLite
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
-# エンジン作成（echo=TrueでSQLログが見える：開発時は便利）
-engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args)
+# Enable pool_pre_ping to avoid "connection is closed" / stale connection
+# issues with long-lived Postgres connections (useful for production).
+engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args, pool_pre_ping=True)
 
 
 def init_db():

@@ -1,17 +1,20 @@
-# Dockerfile for Render deployment
+# ベースイメージ
 FROM python:3.11-slim
+
 WORKDIR /app
-ENV PYTHONUNBUFFERED=1
 
-# Install build deps for psycopg2
-RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+# 必要パッケージのインストール（apt が必要ならここで）
+RUN apt-get update && apt-get install -y build-essential gcc --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt ./
+# 依存関係をコピーしてインストール
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# アプリをコピー
+COPY . /app
 
-EXPOSE 8000
+# 環境変数 PORT がなければ 8000 を使用
+ENV PORT=${PORT:-8000}
 
-# Render sets PORT env var; fall back to 8000
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# uvicorn を起動（環境変数 PORT を使う）
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers"]
