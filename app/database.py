@@ -8,10 +8,10 @@ from sqlalchemy import event
 # 環境変数から取得（Vercel の場合 "postgres://" 形式になりがち）
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 
-# 補正: "postgres://" -> "postgresql+psycopg://"（psycopg v3 を使う場合）
+# 補正: "postgres://" -> "postgresql+psycopg2://"（psycopg2-binary を使う）
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
-
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    
 # デフォルトはローカル SQLite（開発用）
 if DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = DATABASE_URL

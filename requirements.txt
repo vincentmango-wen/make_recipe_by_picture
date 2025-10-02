@@ -48,3 +48,6 @@ websockets==15.0.1
 # Optional: S3 and Postgres support for production
 boto3==1.28.59
 psycopg==3.2.9
+
+# 追加：vercelのserverlessでlibpqがない環境向けにバイナリを使う
+psycopg-binary==2.9.7
