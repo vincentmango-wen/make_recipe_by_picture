@@ -1,6 +1,7 @@
 # ...existing code...
 from typing import Generator
 import os
+import ssl
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
@@ -25,10 +26,11 @@ if DATABASE_URL:
     # pg8000 が使われる場合: sslmode を取り出して connect_args に反映し、URL からは削除する
     if parts.scheme.startswith("postgresql+pg8000"):
         if "sslmode" in qs:
-            # sslmode=require なら SSL を有効にする
             val = qs.get("sslmode", [""])[0].lower()
             if val in ("require", "verify-ca", "verify-full", "true", "1"):
-                connect_args["ssl"] = True
+                # pg8000 は ssl=True を受け付けないため SSLContext を渡す
+                ctx = ssl.create_default_context()
+                connect_args["ssl_context"] = ctx
         # URL のクエリを除去して再構築（ドライバに不適合なクエリを渡さないため）
         SQLALCHEMY_DATABASE_URL = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
     else:
@@ -53,10 +55,6 @@ if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
         cursor.close()
 
 def init_db() -> None:
-    """
-    初回テーブル作成用。起動時に呼ぶか、以下のコマンドで実行:
-    python -c "from app.database import init_db; init_db()"
-    """
     SQLModel.metadata.create_all(engine)
 
 def get_session() -> Generator[Session, None, None]:
