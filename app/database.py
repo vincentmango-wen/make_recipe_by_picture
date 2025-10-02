@@ -29,8 +29,32 @@ if DATABASE_URL:
         if "sslmode" in qs:
             val = qs.get("sslmode", [""])[0].lower()
             if val in ("require", "verify-ca", "verify-full", "true", "1"):
-                # certifi の CA バンドルを使って検証する SSLContext を作成
-                ctx = ssl.create_default_context(cafile=certifi.where())
+                # 1) まず certifi の CA バンドルで SSLContext を作る（安全）
+                try:
+                    ctx = ssl.create_default_context(cafile=certifi.where())
+                except Exception:
+                    ctx = None
+
+                # 2) もし接続時に自己署名チェーンで失敗する場合のために、
+                #    環境変数 DB_CA_CERT (base64 PEM) があればファイル化して読み込む（より安全）
+                db_ca_b64 = os.environ.get("DB_CA_CERT")
+                if db_ca_b64:
+                    try:
+                        import base64, tempfile
+                        ca_pem = base64.b64decode(db_ca_b64)
+                        tf = tempfile.NamedTemporaryFile(delete=False)
+                        tf.write(ca_pem)
+                        tf.flush()
+                        tf.close()
+                        ctx = ssl.create_default_context(cafile=tf.name)
+                    except Exception:
+                        pass
+
+                # 3) 最後の手段（開発・一時）で検証無効のコンテキストへフォールバック
+                if ctx is None:
+                    # NOTE: このフォールバックは安全でない。暫定対応のみ。
+                    ctx = ssl._create_unverified_context()
+
                 connect_args["ssl_context"] = ctx
         # URL のクエリを除去して再構築（ドライバに不適合なクエリを渡さないため）
         SQLALCHEMY_DATABASE_URL = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
