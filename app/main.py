@@ -23,6 +23,10 @@ app = FastAPI(
     description="画像から食材を検出し、レシピを提案・保存するAPI（MVP）",
     version="0.1.0",
 )
+@app.on_event("startup")
+def on_startup():
+    # 本番では初回のみ or マイグレーションを使うべきだが、簡易自動作成
+    init_db()
 
 # レシピルーターを追加
 app.include_router(recipes.router)

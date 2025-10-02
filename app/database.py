@@ -1,44 +1,39 @@
-# app/database.py
-from sqlmodel import SQLModel, create_engine, Session
+from typing import Generator
 import os
-from dotenv import load_dotenv
+from sqlmodel import SQLModel, create_engine, Session
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
 
-load_dotenv()
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Read raw DATABASE_URL from environment (may be None)
-raw_database_url = os.getenv("DATABASE_URL")
-
-# If provided, normalize common Postgres scheme variants. Some providers
-# (Heroku, older libs) return "postgres://..." which SQLAlchemy treats as
-# legacy; prefer explicit driver scheme for psycopg2.
-if raw_database_url:
-    DATABASE_URL = raw_database_url
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+# デフォルトはローカル SQLite（開発用）
+if DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = DATABASE_URL
 else:
-    # Fallback to local SQLite for development when DATABASE_URL is not set
-    DATABASE_URL = "sqlite:///./recipes.db"
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///./recipes.db"
 
-# connect_args are required only for SQLite
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+# SQLite の場合は check_same_thread が必要
+connect_args = {}
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
 
-# Enable pool_pre_ping to avoid "connection is closed" / stale connection
-# issues with long-lived Postgres connections (useful for production).
-engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args, pool_pre_ping=True)
+engine: Engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=False, connect_args=connect_args)
 
+# SQLite の場合に Foreign Key を有効化（必要なら）
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_con, _connection_record):
+        cursor = dbapi_con.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
-def init_db():
+def init_db() -> None:
     """
-    モデルで定義したテーブルをSQLiteに作成する関数。
-    初回起動時に呼び出す。
+    初回テーブル作成用。起動時に呼ぶか、以下のコマンドで実行:
+    python -c "from app.database import init_db; init_db()"
     """
     SQLModel.metadata.create_all(engine)
 
-
-def get_session():
-    """
-    DB操作用のセッションを返す関数。
-    API内でDBアクセスするときに使う。
-    """
+def get_session() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
