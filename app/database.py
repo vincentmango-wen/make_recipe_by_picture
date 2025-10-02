@@ -1,10 +1,16 @@
+# ...existing code...
 from typing import Generator
 import os
 from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
+# 環境変数から取得（Vercel の場合 "postgres://" 形式になりがち）
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+
+# 補正: "postgres://" -> "postgresql+psycopg://"（psycopg v3 を使う場合）
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
 
 # デフォルトはローカル SQLite（開発用）
 if DATABASE_URL:
@@ -17,7 +23,8 @@ connect_args = {}
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
-engine: Engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=False, connect_args=connect_args)
+# pool_pre_ping を付けると DB 切断時の復旧に有利
+engine: Engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=False, connect_args=connect_args, pool_pre_ping=True)
 
 # SQLite の場合に Foreign Key を有効化（必要なら）
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
@@ -37,3 +44,4 @@ def init_db() -> None:
 def get_session() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
+# ...existing code...
