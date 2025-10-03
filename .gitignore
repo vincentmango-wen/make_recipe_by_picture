@@ -210,3 +210,6 @@ __marimo__/
 removed_auth_backup/
 
 awscli-bundle/
+
+prod-ca-2021.crt
+prod-ca-2021.crt.b64
