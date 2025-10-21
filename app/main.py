@@ -24,15 +24,18 @@ app = FastAPI(
     version="0.1.0",
 )
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     # 本番では初回のみ or マイグレーションを使うべきだが、簡易自動作成
+    print("Starting database initialization...")
     try:
         init_db()
         print("Database initialized successfully")
     except Exception as e:
         print(f"Database initialization failed: {e}")
         print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NOT SET')[:20]}...")
-        raise
+        print(f"POSTGRES_URL: {os.getenv('POSTGRES_URL', 'NOT SET')[:20]}...")
+        # エラーを再発生させず、ログのみ出力
+        print("Continuing without database initialization...")
 
 # レシピルーターを追加
 app.include_router(recipes.router)

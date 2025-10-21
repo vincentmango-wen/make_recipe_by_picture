@@ -87,10 +87,13 @@ def init_db() -> None:
 
 def get_session() -> Generator[Session, None, None]:
     try:
+        print(f"Attempting database connection...")
+        print(f"DATABASE_URL: {DATABASE_URL[:20]}..." if DATABASE_URL else "DATABASE_URL not set")
         with Session(engine) as session:
             yield session
     except Exception as e:
         print(f"Database connection error: {e}")
         print(f"DATABASE_URL: {DATABASE_URL[:20]}..." if DATABASE_URL else "DATABASE_URL not set")
+        print(f"POSTGRES_URL: {os.getenv('POSTGRES_URL', 'NOT SET')[:20]}...")
         raise
 # ...existing code...
