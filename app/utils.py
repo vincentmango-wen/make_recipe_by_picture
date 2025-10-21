@@ -5,7 +5,6 @@ import base64
 import json
 from dotenv import load_dotenv
 from openai import OpenAI
-from PIL import Image
 
 # Optional S3 support
 import boto3
@@ -75,8 +74,6 @@ def parse_ingredients_from_response(content: str) -> list[str]:
     return items
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOAD_DIR = BASE_DIR / "static" / "generated"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def save_b64_image(b64_data: str, title: str) -> str:
