@@ -4,14 +4,11 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from pathlib import Path
-from PIL import Image
-from app.utils import save_upload_file
+from app.utils import parse_ingredients_from_response
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
-# 保存先ディレクトリ
-UPLOAD_DIR = Path("app/static/uploads")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# サーバレスではローカル保存を行わない
 
 
 @router.post("/")
@@ -25,20 +22,17 @@ async def upload_image(file: UploadFile = File(...)):
     if not file.filename.lower().endswith((".jpg", ".jpeg", ".png")):
         raise HTTPException(status_code=400, detail="Only .jpg/.png files are allowed")
 
-    # 保存ファイル名（タイムスタンプ付き）
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    save_path = UPLOAD_DIR / f"{timestamp}_{file.filename}"
-
+    # サーバレスではファイルは保存せず、必要なら bytes をそのまま扱う
     try:
-        save_path = save_upload_file(file)
+        _ = await file.read()
     except Exception:
-        raise HTTPException(status_code=500, detail="Failed to process image")
+        raise HTTPException(status_code=500, detail="Failed to read image")
 
     # TODO: 本来はAIで食材検出する処理
     dummy_ingredients = ["tomato", "onion", "chicken"]
 
     return JSONResponse({
         "filename": file.filename,
-        "saved_path": str(save_path),
+        "saved_path": None,
         "ingredients": dummy_ingredients,
     })

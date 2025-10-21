@@ -9,7 +9,7 @@ from typing import List
 import os
 import base64
 from dotenv import load_dotenv
-from app.utils import save_upload_file, get_openai_client, parse_ingredients_from_response, save_b64_image
+from app.utils import get_openai_client, parse_ingredients_from_response, save_b64_image
 
 from app.database import init_db, get_session
 from app.routers import recipes, upload, generate, image_gen
@@ -57,12 +57,6 @@ async def index(request: Request):
 # --------------------------------------------------------------
 @app.post("/upload_ui", response_class=HTMLResponse)
 async def upload_ui(request: Request, file: UploadFile = File(...)):
-    from pathlib import Path
-    from PIL import Image
-    from datetime import datetime
-
-    # save uploaded file using utility
-    save_path = save_upload_file(file)
 
     # --- Vision API呼び出し ---
     load_dotenv()
@@ -74,8 +68,7 @@ async def upload_ui(request: Request, file: UploadFile = File(...)):
     例: ["トマト","玉ねぎ","鶏肉"]
     """
 
-    with open(save_path, "rb") as f:
-        img_bytes = f.read()
+    img_bytes = await file.read()
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",   # Vision対応モデル
