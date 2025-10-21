@@ -45,6 +45,8 @@ uvloop==0.21.0
 watchfiles==1.1.0
 websockets==15.0.1
 
+psycopg2-binary==2.9.11
+
 # Optional: S3 and Postgres support for production
 boto3==1.28.59
 pg8000==1.30.1
