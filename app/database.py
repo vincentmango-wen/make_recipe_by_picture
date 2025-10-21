@@ -8,8 +8,11 @@ from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from urllib.parse import urlsplit, urlunsplit, parse_qs
 
-# 環境変数から取得
+# 環境変数から取得（Supabase対応）
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+# Supabase の場合は POSTGRES_URL も確認
+if not DATABASE_URL:
+    DATABASE_URL = os.environ.get("POSTGRES_URL", "").strip()
 
 # 補正: "postgres://" -> "postgresql+psycopg2://"（純Pythonドライバ psycopg2 を使う）
 if DATABASE_URL.startswith("postgres://"):
