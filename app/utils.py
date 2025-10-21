@@ -79,17 +79,15 @@ UPLOAD_DIR = BASE_DIR / "static" / "generated"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def save_b64_image(b64_data: str, title: str) -> typing.Union[Path, str]:
+def save_b64_image(b64_data: str, title: str) -> str:
     """
     Save base64 image either to configured S3 bucket (if S3_BUCKET env set)
-    and return a public URL, or fall back to local file and return Path.
+    and return a public URL, or return data URL for Postgres-only setup.
     """
-    # generate filename from title
-    filename = f"{title}_{int(os.times()[4])}.png"
-
     s3_bucket = os.getenv("S3_BUCKET")
     if s3_bucket:
         # upload to S3
+        filename = f"{title}_{int(os.times()[4])}.png"
         s3 = boto3.client(
             "s3",
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
@@ -103,14 +101,8 @@ def save_b64_image(b64_data: str, title: str) -> typing.Union[Path, str]:
             # Return public URL; adjust if using custom domain or CloudFront
             return f"https://{s3_bucket}.s3.amazonaws.com/{key}"
         except (BotoCoreError, ClientError) as e:
-            # If upload fails, fall back to local save
-            # continue to local save below
+            # If upload fails, fall back to data URL
             pass
 
-    # Local fallback: save under app/static/generated
-    file_path = UPLOAD_DIR / filename
-    with open(file_path, "wb") as f:
-        f.write(base64.b64decode(b64_data))
-
-    # Return path-like URL used by the app (string) for templates
-    return f"/static/generated/{file_path.name}"
+    # Postgres-only setup: return data URL instead of local file
+    return "data:image/png;base64," + b64_data

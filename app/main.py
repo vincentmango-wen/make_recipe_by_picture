@@ -42,8 +42,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")
 
-# DB初期化を一度だけ実行
-init_db()
+# DB初期化は startup イベントでのみ実行
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -94,11 +93,14 @@ async def upload_ui(request: Request, file: UploadFile = File(...)):
     content = response.choices[0].message.content.strip()
     ingredients = parse_ingredients_from_response(content)
 
+    # UI にはデータURLで表示（サーバレスでローカル静的配信に依存しない）
+    image_data_url = "data:image/jpeg;base64," + base64.b64encode(img_bytes).decode("utf-8")
+
     return templates.TemplateResponse(
         "result.html",
         {
             "request": request,
-            "image_url": f"/static/uploads/{save_path.name}",
+            "image_url": image_data_url,
             "ingredients": ingredients,
         },
     )
