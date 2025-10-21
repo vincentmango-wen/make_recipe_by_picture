@@ -83,6 +83,11 @@ def init_db() -> None:
     SQLModel.metadata.create_all(engine)
 
 def get_session() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        yield session
+    try:
+        with Session(engine) as session:
+            yield session
+    except Exception as e:
+        print(f"Database connection error: {e}")
+        print(f"DATABASE_URL: {DATABASE_URL[:20]}..." if DATABASE_URL else "DATABASE_URL not set")
+        raise
 # ...existing code...

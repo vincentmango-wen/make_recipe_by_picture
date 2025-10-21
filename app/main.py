@@ -26,7 +26,13 @@ app = FastAPI(
 @app.on_event("startup")
 def on_startup():
     # 本番では初回のみ or マイグレーションを使うべきだが、簡易自動作成
-    init_db()
+    try:
+        init_db()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Database initialization failed: {e}")
+        print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NOT SET')[:20]}...")
+        raise
 
 # レシピルーターを追加
 app.include_router(recipes.router)

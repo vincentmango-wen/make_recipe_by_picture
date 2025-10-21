@@ -28,26 +28,30 @@ def timestamped_filename(original: str) -> str:
 
 
 def save_upload_file(upload_file, upload_dir: str | Path | None = None) -> Path:
-    """Save an uploaded file (Pillow used to normalize image) and return Path.
+    """Save an uploaded file and return Path (serverless-compatible, no PIL).
 
-    By default saves to the project's `app/static/uploads` directory so the
-    `StaticFiles` mount at `/static` can serve it. Passing an absolute path is
-    supported but will be treated as relative to the project if it points at
-    a root-level path (to avoid creating '/static' on the filesystem).
+    Default location is /tmp/uploads for serverless safety. You can override
+    via the UPLOAD_DIR environment variable or by passing upload_dir.
     """
-    # default to app/static/uploads (BASE_DIR is defined later in this file)
-    global BASE_DIR
+    if upload_file is None:
+        raise ValueError("upload_file is required")
+    
     if upload_dir is None:
-        upload_dir = Path(__file__).resolve().parent / "static" / "uploads"
+        upload_dir = Path(os.getenv("UPLOAD_DIR", "/tmp/uploads"))
     upload_dir = Path(upload_dir)
 
     _ensure_dir(upload_dir)
-    filename = timestamped_filename(upload_file.filename)
+    filename = timestamped_filename(getattr(upload_file, "filename", "upload.bin"))
     save_path = upload_dir / filename
 
-    # Use PIL to open and re-save (handles streams and formats)
-    img = Image.open(upload_file.file)
-    img.save(save_path)
+    # Write raw bytes without PIL (serverless-friendly)
+    try:
+        data = upload_file.file.read()
+    except Exception:
+        # Fallback: some runtimes may require async read upstream
+        data = b""
+    with open(save_path, "wb") as f:
+        f.write(data)
     return save_path
 
 
