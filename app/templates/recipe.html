@@ -26,33 +26,5 @@ content %}
 />
 {% endif %}
 
-<!-- 保存ボタン -->
-<form action="/save_recipe_ui" method="post">
-  <input
-    type="hidden"
-    name="title"
-    value="{{ recipe.splitlines()[0].replace('料理名:','').strip() }}"
-  />
-  <input type="hidden" name="steps" value="{{ recipe }}" />
-  <input type="hidden" name="ingredients" value="{{ ','.join(ingredients) }}" />
-  <input type="hidden" name="image_url" value="{{ image_url }}" />
-  <!-- タグ選択（チェックボックス） -->
-  <div class="mb-3">
-    <label class="form-label">タグを選択</label><br />
-    {% for tag in tags %}
-    <div class="form-check form-check-inline">
-      <input
-        class="form-check-input"
-        type="checkbox"
-        name="tags"
-        value="{{ tag.name }}"
-      />
-      <label class="form-check-label">{{ tag.name }}</label>
-    </div>
-    {% endfor %}
-  </div>
-  <button type="submit" class="btn btn-success">📌 保存する</button>
-</form>
-
 <a href="/" class="btn btn-secondary mt-3">← 戻る</a>
 {% endblock %}

@@ -1,20 +1,15 @@
 # app/main.py
-from fastapi import FastAPI, Request, Form, UploadFile, File, Depends, HTTPException
+from fastapi import FastAPI, Request, Form, UploadFile, File
 from pathlib import Path
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
-from sqlmodel import Session, select
-from typing import List
 import os
 import base64
 from dotenv import load_dotenv
 from app.utils import get_openai_client, parse_ingredients_from_response, save_b64_image
 
-from app.database import init_db, get_session
-from app.routers import recipes, upload, generate, image_gen
-from app.models import Tag, Recipe
-from app.schemas import RecipeCreate
+from app.routers import upload, generate, image_gen
 
 # FastAPIアプリ本体を生成
 # ※タイトルや説明は自動生成のドキュメント(/docs)に反映されます
@@ -23,22 +18,9 @@ app = FastAPI(
     description="画像から食材を検出し、レシピを提案・保存するAPI（MVP）",
     version="0.1.0",
 )
-@app.on_event("startup")
-async def on_startup():
-    # 本番では初回のみ or マイグレーションを使うべきだが、簡易自動作成
-    print("Starting database initialization...")
-    try:
-        init_db()
-        print("Database initialized successfully")
-    except Exception as e:
-        print(f"Database initialization failed: {e}")
-        print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NOT SET')[:20]}...")
-        print(f"POSTGRES_URL: {os.getenv('POSTGRES_URL', 'NOT SET')[:20]}...")
-        # エラーを再発生させず、ログのみ出力
-        print("Continuing without database initialization...")
+# データベース初期化は不要（MVP仕様）
 
-# レシピルーターを追加
-app.include_router(recipes.router)
+# MVP機能のルーターを追加
 app.include_router(upload.router)
 app.include_router(generate.router)
 app.include_router(image_gen.router)
@@ -113,8 +95,7 @@ async def upload_ui(request: Request, file: UploadFile = File(...)):
 @app.post("/generate_ui", response_class=HTMLResponse)
 async def generate_ui(
     request: Request, 
-    ingredients: str = Form(...),
-    session: Session = Depends(get_session)
+    ingredients: str = Form(...)
     ):
     load_dotenv()
     client = get_openai_client()
@@ -157,8 +138,6 @@ async def generate_ui(
     img_b64 = image_response.data[0].b64_json
     image_url = save_b64_image(img_b64, title=title)
 
-    tags = session.exec(select(Tag)).all()
-
     return templates.TemplateResponse(
         "recipe.html",
         {
@@ -166,154 +145,7 @@ async def generate_ui(
             "ingredients": ingredient_list,
             "recipe": recipe_text,
             "image_url": image_url,
-            "tags": tags,
         },
     )
 
-from app.database import get_session
-
-# ----------------------------
-# 保存済みレシピ一覧
-# ----------------------------
-@app.get("/recipes_ui", response_class=HTMLResponse)
-def list_recipes_ui(
-    request: Request,
-    fav_only: bool = False,
-    session: Session = Depends(get_session)
-):
-    query = select(Recipe)
-    if fav_only:
-        query = query.where(Recipe.favorite == True)
-
-    recipes = session.exec(query).all()
-    return templates.TemplateResponse(
-        "recipes_list.html",
-        {"request": request, "recipes": recipes, "fav_only": fav_only},
-    )
-
-# ----------------------------
-# レシピ詳細表示
-# ----------------------------
-@app.get("/recipes_ui/{recipe_id}", response_class=HTMLResponse)
-def recipe_detail_ui(recipe_id: int, request: Request, session: Session = Depends(get_session)):
-    recipe = session.get(Recipe, recipe_id)
-    if not recipe:
-        return HTMLResponse("レシピが見つかりません", status_code=404)
-    return templates.TemplateResponse(
-        "recipe_detail.html",
-        {"request": request, "recipe": recipe},
-    )
-
-# ----------------------------
-# レシピ保存（UI向け）
-# ----------------------------
-
-from app.models import Recipe, Ingredient
-from app.schemas import RecipeCreate
-
-@app.post("/save_recipe_ui", response_class=HTMLResponse)
-def save_recipe_ui(
-    request: Request,
-    title: str = Form(...),
-    steps: str = Form(...),
-    ingredients: str = Form(""),
-    image_url: str = Form(None),
-    tags: List[str] = Form([]),
-    session: Session = Depends(get_session),
-):
-    """
-    レシピをDBに保存するUI用ルート（認証不要）
-    """
-    recipe = Recipe(
-        title=title,
-        steps=steps,
-        image_url=image_url,
-        favorite=False,
-        user_id=None
-    )
-    """
-    レシピをDBに保存するUI用ルート
-    """
-
-    # 食材を登録（カンマ区切り）
-    ing_list = [i.strip() for i in ingredients.split(",") if i.strip()]
-    for ing_name in ing_list:
-        db_ing = session.exec(select(Ingredient).where(Ingredient.name == ing_name)).first()
-        if not db_ing:
-            db_ing = Ingredient(name=ing_name)
-        recipe.ingredients.append(db_ing)
-
-    # タグを登録（カンマ区切り）
-    for tag_name in tags:
-        session_tag = session.exec(select(Tag).where(Tag.name == tag_name)).first()
-        if session_tag:
-            recipe.tags.append(session_tag)
-
-    session.add(recipe)
-    session.commit()
-    session.refresh(recipe)
-
-    return templates.TemplateResponse(
-        "recipe_saved.html",
-        {"request": request, "recipe": recipe},
-    )
-
-@app.post("/recipes_ui/{recipe_id}/toggle_fav", response_class=HTMLResponse)
-def toggle_favorite(recipe_id: int, request: Request, session: Session = Depends(get_session)):
-    recipe = session.get(Recipe, recipe_id)
-    if not recipe:
-        return HTMLResponse("レシピが見つかりません", status_code=404)
-
-    # ★を反転
-    recipe.favorite = not recipe.favorite
-    session.add(recipe)
-    session.commit()
-    session.refresh(recipe)
-
-    # 一覧にリダイレクト
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/recipes_ui", status_code=303)
-
-# タグ管理ページ
-@app.get("/tags_ui", response_class=HTMLResponse)
-def list_tags_ui(request: Request, session: Session = Depends(get_session)):
-    tags = session.exec(select(Tag)).all()
-    return templates.TemplateResponse(
-        "tags_list.html",
-        {"request": request, "tags": tags},
-    )
-
-# タグ追加
-@app.post("/tags_ui/add", response_class=HTMLResponse)
-def add_tag(name: str = Form(...), session: Session = Depends(get_session)):
-    tag = Tag(name=name)
-    session.add(tag)
-    session.commit()
-    return RedirectResponse(url="/tags_ui", status_code=303)
-
-# タグ削除
-@app.post("/tags_ui/{tag_id}/delete", response_class=HTMLResponse)
-def delete_tag(tag_id: int, session: Session = Depends(get_session)):
-    tag = session.get(Tag, tag_id)
-    if tag:
-        session.delete(tag)
-        session.commit()
-    return RedirectResponse(url="/tags_ui", status_code=303)
-
-@app.post("/recipes_ui/{recipe_id}/delete")
-def delete_recipe_ui(recipe_id: int, session: Session = Depends(get_session)):
-    recipe = session.get(Recipe, recipe_id)
-    if not recipe:
-        return RedirectResponse(url="/recipes_ui", status_code=303)
-
-    # （任意）画像ファイルも消す
-    if recipe.image_url and recipe.image_url.startswith("/static/"):
-        p = Path("app") / recipe.image_url.lstrip("/")
-        try:
-            p.unlink(missing_ok=True)
-        except Exception:
-            pass
-
-    session.delete(recipe)
-    session.commit()
-    return RedirectResponse(url="/recipes_ui", status_code=303)
+# MVP仕様：データベース関連機能は削除
