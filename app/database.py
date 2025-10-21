@@ -14,10 +14,6 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 if not DATABASE_URL:
     DATABASE_URL = os.environ.get("POSTGRES_URL", "").strip()
 
-# 補正: "postgres://" -> "postgresql+psycopg2://"（純Pythonドライバ psycopg2 を使う）
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
-
 # 初期設定
 SQLALCHEMY_DATABASE_URL = ""
 connect_args = {}
